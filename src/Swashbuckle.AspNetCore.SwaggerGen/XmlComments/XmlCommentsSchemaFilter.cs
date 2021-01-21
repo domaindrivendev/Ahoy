@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Xml.XPath;
 using Microsoft.OpenApi.Models;
-
+using System.Reflection;
 namespace Swashbuckle.AspNetCore.SwaggerGen
 {
     public class XmlCommentsSchemaFilter : ISchemaFilter
