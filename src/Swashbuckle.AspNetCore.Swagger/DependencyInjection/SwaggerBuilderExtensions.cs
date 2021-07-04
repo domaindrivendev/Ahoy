@@ -58,6 +58,7 @@ namespace Microsoft.AspNetCore.Builder
 
                 options.RouteTemplate = pattern;
                 options.SerializeAsV2 = endpointOptions.SerializeAsV2;
+                options.UseOpenApiDocumentMemoryCaching = endpointOptions.UseOpenApiDocumentMemoryCaching;
                 options.PreSerializeFilters.AddRange(endpointOptions.PreSerializeFilters);
             };
 

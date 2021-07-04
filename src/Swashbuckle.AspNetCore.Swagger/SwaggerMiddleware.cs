@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
 
@@ -25,7 +27,7 @@ namespace Swashbuckle.AspNetCore.Swagger
             _requestMatcher = new TemplateMatcher(TemplateParser.Parse(_options.RouteTemplate), new RouteValueDictionary());
         }
 
-        public async Task Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+        public async Task Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider, IMemoryCache memoryCache)
         {
             if (!RequestingSwaggerDocument(httpContext.Request, out string documentName))
             {
@@ -39,10 +41,25 @@ namespace Swashbuckle.AspNetCore.Swagger
                     ? httpContext.Request.PathBase.Value
                     : null;
 
-                var swagger = swaggerProvider.GetSwagger(
-                    documentName: documentName,
-                    host: null,
-                    basePath: basePath);
+                OpenApiDocument swagger = null;
+                if (!_options.UseOpenApiDocumentMemoryCaching)
+                {
+                    swagger = swaggerProvider.GetSwagger(
+                        documentName: documentName,
+                        host: null,
+                        basePath: basePath);
+                }
+                else
+                {
+                    if (memoryCache?.TryGetValue((documentName, (string)null, basePath), out swagger) != true)
+                    {
+                        swagger = swaggerProvider.GetSwagger(
+                            documentName: documentName,
+                            host: null,
+                            basePath: basePath);
+                        memoryCache?.Set((documentName, (string)null, basePath), swagger);
+                    }
+                }
 
                 // One last opportunity to modify the Swagger Document - this time with request context
                 foreach (var filter in _options.PreSerializeFilters)
